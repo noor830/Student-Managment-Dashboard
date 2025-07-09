@@ -54,7 +54,7 @@ I'm a Web developer...
 🔗 Links
 linkedin
 
-![image alt]()
+![image alt](https://github.com/noor830/Student-Managment-Dashboard/blob/9c455d7135c04410e6cd0afdc0e50b09175212a6/6.png)
 
 ![image alt]()
 
