@@ -1,1 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Responsive table adjustments */
+        @media (max-width: 768px) {
+            .responsive-table th {
+                display: none;
+            }
+            
+            .responsive-table td {
+                display: grid;
+                grid-template-columns: 120px auto;
+                gap: 10px;
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .responsive-table td::before {
+                content: attr(data-cell) ": ";
+                font-weight: 700;
+                color: #374151;
+            }
+            
+            .action-buttons {
+                grid-column: 1 / -1;
+                display: flex;
+                gap: 0.5rem;
+                justify-content: flex-end;
+                padding-right: 0.5rem;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Section -->
+        <header class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        Student Management Dashboard
+                    </h1>
+                    <p class="text-gray-600 mt-2">Manage student records efficiently with our intuitive interface</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="statsBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                        View Statistics
+                    </button>
+                    <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Add Student Form -->
+        <section class="mb-10 bg-white rounded-lg shadow-md overflow-hidden fade-in" id="addStudentSection">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    <span id="formTitle">Add New Student</span>
+                    <span id="editingId" class="hidden"></span>
+                </h2>
+            </div>
+            <form id="studentForm" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="name" name="name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="regNo" class="block text-sm font-medium text-gray-700 mb-1">Registration No</label>
+                    <input type="text" id="regNo" name="regNo" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="dept" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select id="dept" name="dept" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select Department</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Business Administration">Business Administration</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <select id="year" name="year" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select Year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="marks" class="block text-sm font-medium text-gray-700 mb-1">Marks (Out of 100)</label>
+                    <input type="number" id="marks" name="marks" min="0" max="100" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="md:col-span-2 lg:col-span-5 flex gap-2 justify-end">
+                    <button type="button" id="cancelBtn" class="hidden px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="submitBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Add Student
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Search and Filter Section -->
+        <section class="mb-6 bg-white rounded-lg shadow-md overflow-hidden fade-in">
+            <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">Search Students</label>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search by name or registration..."
+                            class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="deptFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Department</label>
+                    <select id="deptFilter" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Departments</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Business Administration">Business Administration</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="yearFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Year</label>
+                    <select id="yearFilter" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Years</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Modal -->
+        <div id="statsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Class Statistics</h3>
+                    <button id="closeStatsModal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-sm text-blue-600">Total Students</p>
+                        <p id="totalStudentsCount" class="text-2xl font-bold text-blue-800">0</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="text-sm text-green-600">Average Marks</p>
+                        <p id="avgMarksCount" class="text-2xl font-bold text-green-800">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <p class="text-sm text-purple-600">Top Department</p>
+                        <p id="topDeptCount" class="text-2xl font-bold text-purple-800">-</p>
+                    </div>
+                    <div class="bg-yellow-50 p-3 rounded-lg">
+                        <p class="text-sm text-yellow-600">Most Common Year</p>
+                        <p id="commonYearCount" class="text-2xl font-bold text-yellow-800">-</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 pt-4">
+                    <h4 class="font-medium text-gray-800 mb-2">Performance Distribution</h4>
+                    <div class="flex items-center mb-1">
+                        <span class="w-20 text-sm text-gray-600">Excellent (90+)</span>
+                        <div class="flex-1 bg-gray-200 rounded-full h-4">
+                            <div id="excCountBar" class="bg-green-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="excCount" class="w-12 text-right text-sm font-medium">0%</span>
+                    </div>
+                    <div class="flex items-center mb-1">
+                        <span class="w-20 text-sm text-gray-600">Good (70-89)</span>
+                        <div class="flex-1 bg-gray-200 rounded-full h-4">
+                            <div id="goodCountBar" class="bg-blue-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="goodCount" class="w-12 text-right text-sm font-medium">0%</span>
+                    </div>
+                    <div class="flex items-center mb-1">
+                        <span class="w-20 text-sm text-gray-600">Average (50-69)</span>
+                        <div class="flex-1 bg-gray-200 rounded-full h-4">
+                            <div id="avgCountBar" class="bg-yellow-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="avgCount" class="w-12 text-right text-sm font-medium">0%</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-20 text-sm text-gray-600">Needs Help (<50) </span>
+                        <div class="flex-1 bg-gray-200 rounded-full h-4">
+                            <div id="lowCountBar" class="bg-red-500 h-4 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="lowCount" class="w-12 text-right text-sm font-medium">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Table Section -->
+        <section class="bg-white rounded-lg shadow-md overflow-hidden mb-10 fade-in">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Student Records</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 responsive-table">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Name
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Reg No
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Department
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Year
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Marks
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Student records will be populated here by JavaScript -->
+                        <tr id="noStudentsMessage">
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                No student records found. Add your first student using the form above.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-3 border-t border-gray-200 text-right">
+                <span id="recCount" class="text-sm text-gray-600">Showing 0 records</span>
+            </div>
+        </section>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Confirm Deletion</h3>
+                    <button id="closeConfirmModal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <p id="confirmMessage" class="mb-6 text-gray-700">Are you sure you want to delete this student record?</p>
+                <div class="flex justify-end gap-3">
+                    <button id="confirmCancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
+                        Cancel
+                    </button>
+                    <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const studentForm = document.getElementById('studentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('formTitle');
+        const editingId = document.getElementById('editingId');
+        const searchInput = document.getElementById('searchInput');
+        const deptFilter = document.getElementById('deptFilter');
+        const yearFilter = document.getElementById('yearFilter');
+        const studentsTableBody = document.getElementById('studentsTableBody');
+        const noStudentsMessage = document.getElementById('noStudentsMessage');
+        const recCount = document.getElementById('recCount');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const closeConfirmModal = document.getElementById('closeConfirmModal');
+        const statsBtn = document.getElementById('statsBtn');
+        const statsModal = document.getElementById('statsModal');
+        const closeStatsModal = document.getElementById('closeStatsModal');
+        const totalStudentsCount = document.getElementById('totalStudentsCount');
+        const avgMarksCount = document.getElementById('avgMarksCount');
+        const topDeptCount = document.getElementById('topDeptCount');
+        const commonYearCount = document.getElementById('commonYearCount');
+        const excCount = document.getElementById('excCount');
+        const excCountBar = document.getElementById('excCountBar');
+        const goodCount = document.getElementById('goodCount');
+        const goodCountBar = document.getElementById('goodCountBar');
+        const avgCount = document.getElementById('avgCount');
+        const avgCountBar = document.getElementById('avgCountBar');
+        const lowCount = document.getElementById('lowCount');
+        const lowCountBar = document.getElementById('lowCountBar');
+        const exportBtn = document.getElementById('exportBtn');
+
+        // Student Data Storage
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStudentsTable();
+            setupEventListeners();
+        });
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Form submission
+            studentForm.addEventListener('submit', handleFormSubmit);
+            
+            // Cancel button
+            cancelBtn.addEventListener('click', resetForm);
+            
+            // Search and filter inputs
+            searchInput.addEventListener('input', renderStudentsTable);
+            deptFilter.addEventListener('change', renderStudentsTable);
+            yearFilter.addEventListener('change', renderStudentsTable);
+            
+            // Modal buttons
+            confirmDeleteBtn.addEventListener('click', handleDeleteConfirmed);
+            confirmCancelBtn.addEventListener('click', closeModal);
+            closeConfirmModal.addEventListener('click', closeModal);
+            
+            // Stats modal
+            statsBtn.addEventListener('click', showStatistics);
+            closeStatsModal.addEventListener('click', () => statsModal.classList.add('hidden'));
+            
+            // Export button
+            exportBtn.addEventListener('click', exportData);
+        }
+
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(studentForm);
+            const studentData = {
+                name: formData.get('name'),
+                regNo: formData.get('regNo'),
+                dept: formData.get('dept'),
+                year: formData.get('year'),
+                marks: parseInt(formData.get('marks'))
+            };
+            
+            const isEditing = editingId.textContent !== '';
+            
+            if (isEditing) {
+                // Update existing student
+                const studentId = editingId.textContent;
+                const index = students.findIndex(student => student.id === studentId);
+                
+                if (index !== -1) {
+                    students[index] = { ...students[index], ...studentData };
+                }
+            } else {
+                // Add new student
+                const newStudent = {
+                    id: generateId(),
+                    ...studentData
+                };
+                students.push(newStudent);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('students', JSON.stringify(students));
+            
+            // Reset form and refresh table
+            resetForm();
+            renderStudentsTable();
+        }
+
+        // Generate unique ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Render students table
+        function renderStudentsTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedDept = deptFilter.value;
+            const selectedYear = yearFilter.value;
+            
+            // Filter students based on search and filters
+            let filteredStudents = students.filter(student => {
+                const matchesSearch = student.name.toLowerCase().includes(searchTerm) || 
+                                     student.regNo.toLowerCase().includes(searchTerm);
+                
+                const matchesDept = selectedDept === 'all' || student.dept === selectedDept;
+                const matchesYear = selectedYear === 'all' || student.year === selectedYear;
+                
+                return matchesSearch && matchesDept && matchesYear;
+            });
+            
+            // Clear table body
+            studentsTableBody.innerHTML = '';
+            
+            // Update record count
+            const displayCount = filteredStudents.length;
+            const totalCount = students.length;
+            recCount.textContent = `Showing ${displayCount} of ${totalCount} records`;
+            
+            // Show "no students" message if no results
+            if (filteredStudents.length === 0) {
+                studentsTableBody.appendChild(noStudentsMessage.cloneNode(true));
+                return;
+            }
+            
+            // Sort students by name
+            filteredStudents.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Add rows for each student
+            filteredStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                // Determine status based on marks
+                let statusText, statusColor;
+                const marks = student.marks;
+                
+                if (marks >= 90) {
+                    statusText = 'Excellent';
+                    statusColor = 'text-green-600 bg-green-50';
+                } else if (marks >= 70) {
+                    statusText = 'Good';
+                    statusColor = 'text-blue-600 bg-blue-50';
+                } else if (marks >= 50) {
+                    statusText = 'Average';
+                    statusColor = 'text-yellow-600 bg-yellow-50';
+                } else {
+                    statusText = 'Needs Help';
+                    statusColor = 'text-red-600 bg-red-50';
+                }
+                
+                row.innerHTML = `
+                    <td data-cell="Name" class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${student.name}</div>
+                    </td>
+                    <td data-cell="Reg No" class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${student.regNo}</div>
+                    </td>
+                    <td data-cell="Department" class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${student.dept}</div>
+                    </td>
+                    <td data-cell="Year" class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${student.year}</div>
+                    </td>
+                    <td data-cell="Marks" class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">${student.marks}</div>
+                    </td>
+                    <td data-cell="Status" class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td data-cell="Actions" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-buttons">
+                        <button data-id="${student.id}" class="edit-btn text-indigo-600 hover:text-indigo-900 mr-3">
+                            Edit
+                        </button>
+                        <button data-id="${student.id}" class="delete-btn text-red-600 hover:text-red-900">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                
+                studentsTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', handleEdit);
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', handleDelete);
+            });
+        }
+
+        // Handle edit button click
+        function handleEdit(e) {
+            const studentId = e.target.getAttribute('data-id');
+            const student = students.find(s => s.id === studentId);
+            
+            if (student) {
+                // Fill the form with student data
+                document.getElementById('name').value = student.name;
+                document.getElementById('regNo').value = student.regNo;
+                document.getElementById('dept').value = student.dept;
+                document.getElementById('year').value = student.year;
+                document.getElementById('marks').value = student.marks;
+                
+                // Update form title and show cancel button
+                formTitle.textContent = 'Edit Student';
+                editingId.textContent = studentId;
+                cancelBtn.classList.remove('hidden');
+                submitBtn.textContent = 'Update Student';
+                
+                // Scroll to form
+                document.getElementById('addStudentSection').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Reset form to add new student
+        function resetForm() {
+            studentForm.reset();
+            formTitle.textContent = 'Add New Student';
+            editingId.textContent = '';
+            cancelBtn.classList.add('hidden');
+            submitBtn.textContent = 'Add Student';
+        }
+
+        // Handle delete button click
+        function handleDelete(e) {
+            const studentId = e.target.getAttribute('data-id');
+            const student = students.find(s => s.id === studentId);
+            
+            if (student) {
+                confirmMessage.textContent = `Are you sure you want to delete ${student.name}'s record? This action cannot be undone.`;
+                confirmDeleteBtn.setAttribute('data-id', studentId);
+                confirmModal.classList.remove('hidden');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            confirmModal.classList.add('hidden');
+        }
+
+        // Handle confirmed deletion
+        function handleDeleteConfirmed() {
+            const studentId = confirmDeleteBtn.getAttribute('data-id');
+            
+            // Remove student from array
+            students = students.filter(student => student.id !== studentId);
+            
+            // Save to localStorage
+            localStorage.setItem('students', JSON.stringify(students));
+            
+            // Close modal and refresh table
+            closeModal();
+            renderStudentsTable();
+        }
+
+        // Show statistics modal
+        function showStatistics() {
+            if (students.length === 0) {
+                totalStudentsCount.textContent = '0';
+                avgMarksCount.textContent = '0';
+                topDeptCount.textContent = '-';
+                commonYearCount.textContent = '-';
+                excCount.textContent = '0%';
+                excCountBar.style.width = '0%';
+                goodCount.textContent = '0%';
+                goodCountBar.style.width = '0%';
+                avgCount.textContent = '0%';
+                avgCountBar.style.width = '0%';
+                lowCount.textContent = '0%';
+                lowCountBar.style.width = '0%';
+            } else {
+                // Calculate statistics
+                totalStudentsCount.textContent = students.length;
+                
+                // Average marks
+                const totalMarks = students.reduce((sum, student) => sum + student.marks, 0);
+                const avgMarks = Math.round(totalMarks / students.length);
+                avgMarksCount.textContent = avgMarks;
+                
+                // Top department
+                const deptCounts = {};
+                students.forEach(student => {
+                    deptCounts[student.dept] = (deptCounts[student.dept] || 0) + 1;
+                });
+                const topDept = Object.entries(deptCounts).sort((a, b) => b[1] - a[1])[0][0];
+                topDeptCount.textContent = topDept;
+                
+                // Most common year
+                const yearCounts = {};
+                students.forEach(student => {
+                    yearCounts[student.year] = (yearCounts[student.year] || 0) + 1;
+                });
+                const commonYear = Object.entries(yearCounts).sort((a, b) => b[1] - a[1])[0][0];
+                commonYearCount.textContent = commonYear;
+                
+                // Performance distribution
+                const excStudents = students.filter(s => s.marks >= 90).length;
+                const goodStudents = students.filter(s => s.marks >= 70 && s.marks < 90).length;
+                const avgStudents = students.filter(s => s.marks >= 50 && s.marks < 70).length;
+                const lowStudents = students.filter(s => s.marks < 50).length;
+                
+                const excPercent = Math.round((excStudents / students.length) * 100);
+                const goodPercent = Math.round((goodStudents / students.length) * 100);
+                const avgPercent = Math.round((avgStudents / students.length) * 100);
+                const lowPercent = Math.round((lowStudents / students.length) * 100);
+                
+                excCount.textContent = `${excPercent}%`;
+                excCountBar.style.width = `${excPercent}%`;
+                goodCount.textContent = `${goodPercent}%`;
+                goodCountBar.style.width = `${goodPercent}%`;
+                avgCount.textContent = `${avgPercent}%`;
+                avgCountBar.style.width = `${avgPercent}%`;
+                lowCount.textContent = `${lowPercent}%`;
+                lowCountBar.style.width = `${lowPercent}%`;
+            }
+            
+            statsModal.classList.remove('hidden');
+        }
+
+        // Export data to JSON file
+        function exportData() {
+            if (students.length === 0) {
+                alert('No student data to export.');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(students, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileName = `student_data_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileName);
+            linkElement.click();
+        }
+    </script>
+</body>
+</html>
 
