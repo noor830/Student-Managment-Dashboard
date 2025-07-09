@@ -56,5 +56,5 @@ linkedin
 
 ![image alt](https://github.com/noor830/Student-Managment-Dashboard/blob/9c455d7135c04410e6cd0afdc0e50b09175212a6/6.png)
 
-![image alt]()
+![image alt](https://github.com/noor830/Student-Managment-Dashboard/blob/df98df3038def9b84728525f6a5cad716783c1e9/7.png)
 
