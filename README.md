@@ -53,3 +53,8 @@ I'm a Web developer...
 
 🔗 Links
 linkedin
+
+![image alt]()
+
+![image alt]()
+
